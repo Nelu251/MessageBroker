@@ -1,11 +1,16 @@
 package producer
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
+import akka.util.ByteString
 import net.liftweb.json
 import producer.Main.Tweet
 import play.api.libs.json.{JsValue, Json}
+import producer.actors.Client
+
+import java.net.InetSocketAddress
 
 class MessageWorker extends Actor {
+  val client: ActorRef = context.actorOf(Client.props(new InetSocketAddress("localhost", 1234), null))
 
   case class MessageToSend (isProducer: Boolean, message: String)
   implicit val formats: json.DefaultFormats.type = net.liftweb.json.DefaultFormats
@@ -14,8 +19,7 @@ class MessageWorker extends Actor {
     case Tweet(message) => {
       val result = processMessage(message)
       if (result != null) {
-//        client ! result
-        println(MessageToSend(isProducer = true, result).toString)
+        client ! ByteString(MessageToSend(isProducer = true, result).toString)
       }
     }
   }

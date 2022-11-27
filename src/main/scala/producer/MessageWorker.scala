@@ -2,15 +2,12 @@ package producer
 
 import akka.actor.Actor
 import net.liftweb.json
-import org.json4s.DefaultFormats
 import producer.Main.Tweet
-import play.api.libs.json.{JsValue, Json, Writes}
-import net.liftweb.json._
-import net.liftweb.json.Serialization.write
+import play.api.libs.json.{JsValue, Json}
 
 class MessageWorker extends Actor {
 
-  case class SimplifiedTweet(name: String, lang: String, text: String, source: String)
+  case class MessageToSend (isProducer: Boolean, message: String)
   implicit val formats: json.DefaultFormats.type = net.liftweb.json.DefaultFormats
 
   override def receive: Receive = {
@@ -18,7 +15,7 @@ class MessageWorker extends Actor {
       val result = processMessage(message)
       if (result != null) {
 //        client ! result
-        println(result)
+        println(MessageToSend(isProducer = true, result).toString)
       }
     }
   }
@@ -34,7 +31,7 @@ class MessageWorker extends Actor {
   }
 
   def isValid(message: String): Boolean = {
-    if (message.length.<(16)) {
+    if (message.length.<(19)) {
       false
     }
     else {
@@ -47,11 +44,6 @@ class MessageWorker extends Actor {
     val lang = (json \ "message" \ "tweet" \ "user" \ "lang").get.toString.replaceAll("\"", "")
     val text = (json \ "message" \ "tweet" \ "text").get.toString.replaceAll("\"", "")
     val source = (json \ "message" \ "tweet" \ "source").get.toString.replaceAll("\"", "")
-
-//    val simplifiedTweet = SimplifiedTweet(name, lang, text, source)
-//
-//    val jsonString = write(simplifiedTweet)
-//    jsonString
 
     val result = Json.obj(
       "source" -> source,

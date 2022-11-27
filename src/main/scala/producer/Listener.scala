@@ -1,14 +1,15 @@
 package producer
 
-import akka.actor.{Actor, ActorSystem}
+import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
 import akka.stream.alpakka.sse.scaladsl.EventSource
-import producer.Main.Listen
+import producer.Main.{Listen, Tweet}
 
+import java.net.InetSocketAddress
 import scala.concurrent.Future
 
-class Listener extends Actor {
+class Listener(messageWorker: ActorRef) extends Actor {
 
   implicit val system: ActorSystem = context.system
 
@@ -19,9 +20,11 @@ class Listener extends Actor {
   def receive(): Receive = {
     case Listen(nr) =>
       EventSource(uri.toString() + nr, send = send).runForeach(event => {
-        print(uri.toString() + nr)
-        println()
-        println(self.toString(), event.data)
+        messageWorker ! Tweet(event.data)
+
+//        print(uri.toString() + nr)
+//        println()
+//        println(self.toString(), event.data)
       })
   }
 }

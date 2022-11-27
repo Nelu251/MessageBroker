@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   "org.scalameta" %% "munit" % "0.7.26" % Test,
   "org.json4s" %% "json4s-jackson" % "4.1.0-M1",
   "org.json4s" %% "json4s-native" % "4.1.0-M1",
+  "net.liftweb" %% "lift-json" % "3.5.0",
   "ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime
 
 )

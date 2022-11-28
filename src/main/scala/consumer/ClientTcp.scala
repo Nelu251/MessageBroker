@@ -1,5 +1,4 @@
-package producer.actors
-
+package consumer
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.io.{IO, Tcp}
@@ -7,11 +6,11 @@ import akka.util.ByteString
 
 import java.net.InetSocketAddress
 
-object Client {
-  def props(remote: InetSocketAddress, listener: ActorRef) = Props(new Client(remote, listener))
+object ClientTcp {
+  def props(remote: InetSocketAddress, listener: ActorRef): Props = Props(new ClientTcp(remote, listener))
 }
 
-class Client(remote: InetSocketAddress, var listener: ActorRef) extends Actor {
+class ClientTcp(remote: InetSocketAddress, var listener: ActorRef) extends Actor {
 
   import Tcp._
   import context.system
@@ -29,12 +28,17 @@ class Client(remote: InetSocketAddress, var listener: ActorRef) extends Actor {
       val connection = sender()
       connection ! Register(self)
       context become {
-        case data: ByteString =>
+        case data: ByteString => {
           println("entered")
           connection ! Write(data)
-        case CommandFailed(w: Write) => listener ! "write failed"
-        case Received(data) => listener ! data
-        case "close" => connection ! Close
+        }
+        case CommandFailed(w: Write) =>
+          listener ! "write failed"
+        case Received(data) =>
+          println(s"Data received - ${data.utf8String}")
+          listener ! data
+        case "close" =>
+          connection ! Close
         case _: ConnectionClosed =>
           listener ! "connection closed"
           context stop self

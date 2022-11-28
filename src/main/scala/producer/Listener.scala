@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
 import akka.stream.alpakka.sse.scaladsl.EventSource
-import producer.Main.{Listen, Tweet}
+import producer.ProducerApp.{Listen, Tweet}
 
 import scala.concurrent.Future
 

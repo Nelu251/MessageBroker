@@ -1,19 +1,24 @@
-package messageBroker
+package messageBrocker
 
-import java.net.InetSocketAddress
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.util.ByteString
+import com.typesafe.config.ConfigFactory
 import play.api.libs.json.JsValue
 
-object BrokerApp extends App {
-  case class Publish(message: JsValue)
-  case class Subscribe(message: JsValue, sender: ActorRef)
-  val host = "localhost"
-  val port = 1235
+import java.net.InetSocketAddress
 
+object BrokerApp extends App {
+  case class Subscribe(message: JsValue, sender: ActorRef)
+  case class Publish(message: JsValue)
+
+  val HOST = "localhost"
+  val PORT = 9900
   val actorSystem: ActorSystem = ActorSystem.create("MyActorSystem")
 
-  val dispatcher: ActorRef = actorSystem.actorOf(Props(new TopicDispatcher))
-  val serverActor: ActorRef = actorSystem.actorOf(Server.props(new InetSocketAddress(host, port), dispatcher))
-  println(s"Server started! listening to ${host}:${port}")
+  val topicDispatcher: ActorRef = actorSystem.actorOf(Props(new TopicDispatcher()))
+  val serverActor: ActorRef = actorSystem.actorOf(TcpServer.props(
+    new InetSocketAddress(
+      ConfigFactory.load().getString("host"),
+      ConfigFactory.load().getInt("port")
+    ), topicDispatcher))
+  println(s"Server started!")
 }

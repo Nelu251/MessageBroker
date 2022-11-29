@@ -1,38 +1,40 @@
 package producer
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.util.ByteString
-import net.liftweb.json
-import producer.ProducerApp.{MessageToSend, Tweet}
-import play.api.libs.json.{JsValue, Json}
-import producer.actors.Client
+import com.typesafe.config.ConfigFactory
+import play.api.libs.json._
+import producer.ProducerApp.{Tweet, TweetBind}
 
 import java.net.InetSocketAddress
 
-class MessageWorker extends Actor {
-  val client: ActorRef = context.actorOf(Client.props(new InetSocketAddress("localhost", 1235), null))
+class MessageWorker extends Actor with ActorLogging {
+  val clientActor: ActorRef = context.actorOf(TcpClient.props(
+    new InetSocketAddress(
+      ConfigFactory.load().getString("host"),
+      ConfigFactory.load().getInt("port")
+    ), null))
 
-
-  implicit val formats: json.DefaultFormats.type = net.liftweb.json.DefaultFormats
+  implicit val tweetBind: Writes[TweetBind] = (tweetBind: TweetBind) => Json.obj(
+    "isProducer" -> tweetBind.isProducer,
+    "data" -> tweetBind.data
+  )
 
   override def receive: Receive = {
-    case Tweet(message) => {
-      val result = processMessage(message)
-      if (result != null) {
-        println(MessageToSend(isProducer = true, result).toString)
-        client ! ByteString(MessageToSend(isProducer = true, result).toString)
+
+    case tweetMessage: Tweet => {
+
+      if (isValid(tweetMessage.content)) {
+        val message = bindMessageToProducer(tweetMessage)
+        clientActor ! ByteString(message)
       }
     }
   }
-
-  def processMessage(message: String): String = {
-    val isMessageValid = isValid(message)
-
-    if (isMessageValid) {
-      val messageToJson: JsValue = Json.parse(message)
-      val hz  = extractMessage(messageToJson)
-      hz
-    } else null
+  def bindMessageToProducer(tweet: Tweet): String = {
+    val tweetBindToJson = Json.toJson(TweetBind("true", ""))
+    val jsonTransformer = (__ \ "data").json.update(__.read[JsValue].map { _ => Json.parse(tweet.content) })
+    val str = tweetBindToJson.transform(jsonTransformer).get.toString()
+    str
   }
 
   def isValid(message: String): Boolean = {
@@ -44,19 +46,5 @@ class MessageWorker extends Actor {
     }
   }
 
-  def extractMessage(json: JsValue): String = {
-    val name = (json \ "message" \ "tweet" \ "user" \ "name").get.toString.replaceAll("\"", "")
-    val lang = (json \ "message" \ "tweet" \ "user" \ "lang").get.toString.replaceAll("\"", "")
-    val text = (json \ "message" \ "tweet" \ "text").get.toString.replaceAll("\"", "")
-    val source = (json \ "message" \ "tweet" \ "source").get.toString.replaceAll("\"", "")
-
-    val result = Json.obj(
-      "source" -> source,
-      "name" -> name,
-      "lang" -> lang,
-      "text" -> text
-    )
-    result.toString()
-  }
-
 }
+

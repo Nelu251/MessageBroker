@@ -6,7 +6,7 @@ import play.api.libs.json.{JsValue, Json}
 
 class TopicActor(label: String, storageActor: ActorRef) extends Actor with ActorLogging{
 
-  var list: List[String] = List();
+  var list: List[String] = List()
 
   override def receive: Receive = {
     case Publish(message) => {

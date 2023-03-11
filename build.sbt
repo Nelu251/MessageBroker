@@ -4,7 +4,7 @@ ThisBuild / scalaVersion := "2.12.11"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "PTR-Broker"
+    name := "MessageBroker"
   )
 
 val AkkaVersion = "2.6.18"

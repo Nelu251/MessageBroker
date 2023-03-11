@@ -16,7 +16,7 @@ class Listener(messageWorker: ActorRef) extends Actor with ActorLogging {
 
   def receive(): Receive = {
     case Listen(nr) =>
-      println("Listening to tweets on url: http://localhost:4000//tweets/" + nr)
+      println("SSE stream opened on URL: http://localhost:4000//tweets/" + nr)
       EventSource(uri = uri.toString() + nr, send = send)
         .runForeach(event => {
           messageWorker ! Tweet(event.data)

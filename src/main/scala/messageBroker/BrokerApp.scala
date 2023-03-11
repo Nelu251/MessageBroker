@@ -10,8 +10,6 @@ object BrokerApp extends App {
   case class Subscribe(message: JsValue, sender: ActorRef)
   case class Publish(message: JsValue)
 
-  val HOST = "localhost"
-  val PORT = 9900
   val actorSystem: ActorSystem = ActorSystem.create("MyActorSystem")
 
   val topicDispatcher: ActorRef = actorSystem.actorOf(Props(new TopicDispatcher()))
